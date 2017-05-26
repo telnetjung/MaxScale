@@ -86,6 +86,10 @@ static bool parse_kill_query(char *query, uint64_t *thread_id_out, kill_type_t *
  *
  * @return The module object
  */
+
+extern "C"
+{
+
 MXS_MODULE* MXS_CREATE_MODULE()
 {
     static MXS_PROTOCOL MyObject =
@@ -125,6 +129,8 @@ MXS_MODULE* MXS_CREATE_MODULE()
     };
 
     return &info;
+}
+
 }
 /*lint +e14 */
 
@@ -186,7 +192,7 @@ static void thread_finish(void)
  */
 static char *gw_default_auth()
 {
-    return "MySQLAuth";
+    return (char*)"MySQLAuth";
 }
 
 /**
@@ -243,7 +249,7 @@ int MySQLSendHandshake(DCB* dcb)
     }
     else
     {
-        version_string = GW_MYSQL_VERSION;
+        version_string = (char*)GW_MYSQL_VERSION;
         len_version_string = strlen(GW_MYSQL_VERSION);
     }
 
@@ -487,7 +493,7 @@ int gw_read_client_event(DCB* dcb)
     case MXS_AUTH_STATE_MESSAGE_READ:
         /* After this call read_buffer will point to freed data */
         if (nbytes_read < 3 || (0 == max_bytes && nbytes_read <
-                                (MYSQL_GET_PAYLOAD_LEN((uint8_t *) GWBUF_DATA(read_buffer)) + 4)) ||
+                                (int)(MYSQL_GET_PAYLOAD_LEN((uint8_t *) GWBUF_DATA(read_buffer)) + 4)) ||
             (0 != max_bytes && nbytes_read < max_bytes))
         {
 
@@ -672,7 +678,7 @@ gw_read_do_authentication(DCB *dcb, GWBUF *read_buffer, int nbytes_read)
         if (dcb->user == NULL)
         {
             /** User authentication complete, copy the username to the DCB */
-            MYSQL_session *ses = dcb->data;
+            MYSQL_session *ses = (MYSQL_session*)dcb->data;
             if ((dcb->user = MXS_STRDUP(ses->user)) == NULL)
             {
                 dcb_close(dcb);
@@ -849,7 +855,7 @@ static bool process_client_commands(DCB* dcb, int bytes_available, GWBUF** buffe
             if (dcb->protocol_packet_length - MYSQL_HEADER_LEN != GW_MYSQL_MAX_PACKET_LEN)
             {
                 /** We're processing the first packet of a command */
-                proto->current_command = cmd;
+                proto->current_command = (mysql_server_cmd_t)cmd;
             }
 
             dcb->protocol_packet_length = pktlen + MYSQL_HEADER_LEN;
@@ -922,7 +928,7 @@ gw_read_normal_data(DCB *dcb, GWBUF *read_buffer, int nbytes_read)
     if (rcap_type_required(capabilities, RCAP_TYPE_STMT_INPUT))
     {
         if (nbytes_read < 3 || nbytes_read <
-            (MYSQL_GET_PAYLOAD_LEN((uint8_t *) GWBUF_DATA(read_buffer)) + 4))
+            (int)(MYSQL_GET_PAYLOAD_LEN((uint8_t *) GWBUF_DATA(read_buffer)) + 4))
         {
             dcb->dcb_readqueue = read_buffer;
             return 0;
@@ -1046,7 +1052,7 @@ mysql_client_auth_error_handling(DCB *dcb, int auth_val, int packet_number)
         /** Send error 1049 to client */
         message_len = 25 + MYSQL_DATABASE_MAXLEN;
 
-        fail_str = MXS_CALLOC(1, message_len + 1);
+        fail_str = (char*)MXS_CALLOC(1, message_len + 1);
         MXS_ABORT_IF_NULL(fail_str);
         snprintf(fail_str, message_len, "Unknown database '%s'", session->db);
 
@@ -1455,9 +1461,9 @@ static int route_by_statement(MXS_SESSION* session, uint64_t capabilities, GWBUF
                         }
                         else if ((type & QUERY_TYPE_COMMIT) || (type & QUERY_TYPE_ROLLBACK))
                         {
-                            mxs_session_trx_state_t trx_state = session_get_trx_state(session);
+                            uint32_t trx_state = session_get_trx_state(session);
                             trx_state |= SESSION_TRX_ENDING_BIT;
-                            session_set_trx_state(session, trx_state);
+                            session_set_trx_state(session, (mxs_session_trx_state_t)trx_state);
 
                             if (type & QUERY_TYPE_ENABLE_AUTOCOMMIT)
                             {
@@ -1520,7 +1526,7 @@ static bool ensure_complete_packet(DCB *dcb, GWBUF **read_buffer, int nbytes_rea
     {
         uint8_t* data = (uint8_t *) GWBUF_DATA(*read_buffer);
 
-        if (nbytes_read < 3 || nbytes_read < MYSQL_GET_PAYLOAD_LEN(data) + 4)
+        if (nbytes_read < 3 || nbytes_read < (int)MYSQL_GET_PAYLOAD_LEN(data) + 4)
         {
             dcb->dcb_readqueue = gwbuf_append(dcb->dcb_readqueue, *read_buffer);
             return false;
