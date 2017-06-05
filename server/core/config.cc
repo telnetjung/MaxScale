@@ -1483,7 +1483,7 @@ handle_global_item(const char *name, const char *value)
     }
     else if (strcmp(name, CN_SQL_MODE) == 0)
     {
-        if ((*value == 0) || (strcasecmp(value, "default") == 0))
+        if (strcasecmp(value, "default") == 0)
         {
             gateway.qc_sql_mode = QC_SQL_MODE_DEFAULT;
         }
@@ -1858,6 +1858,8 @@ global_defaults()
 
     /* query_classifier */
     memset(gateway.qc_name, 0, sizeof(gateway.qc_name));
+    gateway.qc_args = NULL;
+    gateway.qc_sql_mode = QC_SQL_MODE_DEFAULT;
 }
 
 /**
