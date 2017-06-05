@@ -124,6 +124,7 @@ const char CN_SERVICE[]                       = "service";
 const char CN_SESSIONS[]                      = "sessions";
 const char CN_SKIP_PERMISSION_CHECKS[]        = "skip_permission_checks";
 const char CN_SOCKET[]                        = "socket";
+const char CN_SQL_MODE[]                      = "sql_mode";
 const char CN_STATE[]                         = "state";
 const char CN_STATUS[]                        = "status";
 const char CN_SSL[]                           = "ssl";
@@ -1479,6 +1480,22 @@ handle_global_item(const char *name, const char *value)
     else if (strcmp(name, CN_QUERY_CLASSIFIER_ARGS) == 0)
     {
         gateway.qc_args = MXS_STRDUP_A(value);
+    }
+    else if (strcmp(name, CN_SQL_MODE) == 0)
+    {
+        if ((*value == 0) || (strcasecmp(value, "default") == 0))
+        {
+            gateway.qc_sql_mode = QC_SQL_MODE_DEFAULT;
+        }
+        else if (strcasecmp(value, "oracle") == 0)
+        {
+            gateway.qc_sql_mode = QC_SQL_MODE_ORACLE;
+        }
+        else
+        {
+            MXS_ERROR("'%s' is not a valid value for '%s'. Allowed values are 'DEFAULT' and "
+                      "'ORACLE'. Using 'DEFAULT' as default.", value, name);
+        }
     }
     else if (strcmp(name, CN_LOG_THROTTLING) == 0)
     {
