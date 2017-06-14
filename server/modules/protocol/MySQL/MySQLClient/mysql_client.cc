@@ -14,12 +14,9 @@
 
 #define MXS_MODULE_NAME "MySQLClient"
 
+#include <maxscale/protocol.h>
 #include <inttypes.h>
 #include <limits.h>
-#include <netinet/tcp.h>
-#include <sys/stat.h>
-
-#include <maxscale/protocol.h>
 #include <netinet/tcp.h>
 #include <sys/stat.h>
 #include <maxscale/alloc.h>
